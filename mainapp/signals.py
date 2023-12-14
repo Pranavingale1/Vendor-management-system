@@ -32,14 +32,22 @@ def update_vendor_and_historical_performance(sender, instance, **kwargs):
     vendor = instance.vendor
 
     # Update Vendor parameters
-    vendor.on_time_delivery_rate = vendor.purchaseorder_set.filter(status='completed').count() / vendor.purchaseorder_set.count() * 100
-    vendor.quality_rating_avg = vendor.purchaseorder_set.filter(status='completed').aggregate(Avg('quality_rating'))['quality_rating__avg'] or 0.0
-    avg_response_time_seconds = vendor.purchaseorder_set.filter(status='completed').aggregate(
-        AvgDuration=ExpressionWrapper(Avg(F('acknowledgement_date') - F('issue_date')), output_field=fields.DurationField())
+    completed_orders = vendor.purchaseorder_set.filter(status='completed')
+    
+    vendor.on_time_delivery_rate = completed_orders.count() / vendor.purchaseorder_set.count() * 100
+    vendor.quality_rating_avg = completed_orders.aggregate(Avg('quality_rating'))['quality_rating__avg'] or 0.0
+
+    avg_response_time_seconds = completed_orders.aggregate(
+        AvgDuration=ExpressionWrapper(Avg(F('acknowledgment_date') - F('issue_date')), output_field=fields.DurationField())
     )['AvgDuration']
-    avg_response_time_hours = avg_response_time_seconds // 3600
-    vendor.avg_response_time = avg_response_time_hours.total_seconds() if avg_response_time_hours else 0.0
-    vendor.fulfillment_rate = vendor.purchaseorder_set.filter(status='completed').count() / vendor.purchaseorder_set.count() * 100
+
+    if avg_response_time_seconds is not None:
+        avg_response_time_hours = avg_response_time_seconds // 3600
+        vendor.avg_response_time = avg_response_time_hours.total_seconds() if avg_response_time_hours else 0.0
+    else:
+        vendor.avg_response_time = 0.0
+
+    vendor.fulfillment_rate = completed_orders.count() / vendor.purchaseorder_set.count() * 100
     vendor.save()
 
     # Update HistoricalPerformance metrics
@@ -59,3 +67,9 @@ def update_vendor_and_historical_performance(sender, instance, **kwargs):
     historical_performance.avg_response_time = vendor.avg_response_time
     historical_performance.fulfillment_rate = vendor.fulfillment_rate
     historical_performance.save()
+
+
+@receiver(post_save, sender=PurchaseOrder)
+def update_avg_response_time(sender, instance, **kwargs):
+    if instance.acknowledgment_date and instance.issue_date:
+        instance.vendor.update_avg_response_time()

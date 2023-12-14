@@ -15,3 +15,8 @@ class HistoricalPerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricalPerformance
         fields = '__all__'
+
+class AcknowledgePurchaseOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseOrder
+        fields = ['acknowledgment_date']

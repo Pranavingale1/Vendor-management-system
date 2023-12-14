@@ -5,7 +5,8 @@ from .views import (VendorListCreateView,
                     PurchaseOrderListCreateView,
                     PurchaseOrderRetrieveUpdateDeleteView,
                     HistoricalPerformanceListCreateView,
-                    HistoricalPerformanceRetrieveUpdateDeleteView)
+                    HistoricalPerformanceRetrieveUpdateDeleteView,
+                    AcknowledgePurchaseOrder)
 
 urlpatterns = [
     path('api/vendors/', VendorListCreateView.as_view(), name='vendor-list-create'),
@@ -16,6 +17,7 @@ urlpatterns = [
     
     path('api/historical_performances/', HistoricalPerformanceListCreateView.as_view(), name='historical-performance-list-create'),
     path('api/historical_performances/<int:pk>/', HistoricalPerformanceRetrieveUpdateDeleteView.as_view(), name='historical-performance-retrieve-update-delete'),
+    path('api/purchase_orders/<int:po_id>/acknowledge/', AcknowledgePurchaseOrder.as_view(), name='acknowledge_purchase_order'),
 ]
 
 
