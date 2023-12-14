@@ -36,8 +36,6 @@ class Vendor(models.Model):
         self.save()
 
     def calculate_acknowledgment_date(self):
-        # Calculate acknowledgment_date based on your logic
-        # For example, you can set it to the current date and time
         from django.utils import timezone
         acknowledgment_date = timezone.now()
         return acknowledgment_date
